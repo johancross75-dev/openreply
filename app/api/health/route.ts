@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import { getDMQueue, getRedisConnection } from "@/lib/queue/client";
 import { getWorkerHealth } from "@/lib/ops/worker-health";
+import { checkDeploymentConfig } from "@/lib/config-check";
 
 export const runtime = "nodejs";
 // Health must reflect live state (worker heartbeat, queue depth), never a
@@ -93,6 +94,15 @@ export async function GET() {
     })),
   ]);
 
+  // Reported for diagnosis only. It does not change the HTTP status, so a host
+  // healthcheck pointed at this route keeps the meaning it always had. Only
+  // variable names and fixed hints are returned, never values.
+  const configReport = checkDeploymentConfig();
+  const config = {
+    status: configReport.ok ? "ok" : "error",
+    issues: configReport.issues,
+  };
+
   const healthy =
     database.status === "ok" &&
     redis.status === "ok" &&
@@ -107,6 +117,7 @@ export async function GET() {
         redis,
         queue,
         worker,
+        config,
       },
     },
     { status: healthy ? 200 : 503 }

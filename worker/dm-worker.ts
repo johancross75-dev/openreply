@@ -3,6 +3,7 @@ import { recordWorkerHeartbeat } from "@/lib/ops/worker-health";
 import { reconcileComments } from "@/lib/polling/comment-reconciler";
 import { attachPendingNextReels } from "@/lib/automation/attach-next-reel";
 import os from "node:os";
+import { checkDeploymentConfig, formatConfigReport } from "@/lib/config-check";
 
 const worker = createDMWorker();
 const startedAt = new Date().toISOString();
@@ -14,6 +15,11 @@ const POLL_INTERVAL_MS = Number(
 );
 
 console.log("[DM Worker] Started");
+{
+  const report = checkDeploymentConfig();
+  const log = report.ok ? console.log : console.error;
+  log(`[DM Worker] ${formatConfigReport(report)}`);
+}
 
 async function heartbeat() {
   try {

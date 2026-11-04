@@ -1340,6 +1340,43 @@ async function processMessage(job: Job<ProcessMessageJob>): Promise<void> {
       matchedKeyword: matchResult.matchedKeyword,
     };
 
+    // One automatic reply per inbound DM, mirroring the one-private-reply-per-
+    // comment rule. A message that hits the keywords of two campaigns ("sí,
+    // quiero la rutina") would otherwise get two unrelated replies — e.g. a
+    // sales message and a free guide. The oldest matching campaign wins, same
+    // order as comments. Checked against the log rather than a local flag so a
+    // retried job that already delivered for another campaign stays deduped.
+    // An unconfirmed send counts too: it may well have reached the person, so
+    // a second campaign must not follow it up with another reply.
+    const repliedBy = await prisma.dmLog.findFirst({
+      where: {
+        commentId: dedupeId,
+        automationId: { not: automation.id },
+        OR: [{ status: "SENT" }, { dmDeliveryUnconfirmed: true }],
+      },
+      select: { automation: { select: { name: true } } },
+    });
+    if (repliedBy) {
+      await prisma.dmLog.upsert({
+        where: {
+          automationId_commentId: {
+            automationId: automation.id,
+            commentId: dedupeId,
+          },
+        },
+        create: {
+          ...logBase,
+          status: "SKIPPED_DEDUP",
+          errorMessage: `Another campaign (${repliedBy.automation?.name ?? "unknown"}) already replied to this message`,
+        },
+        update: {
+          status: "SKIPPED_DEDUP",
+          errorMessage: `Another campaign (${repliedBy.automation?.name ?? "unknown"}) already replied to this message`,
+        },
+      });
+      continue;
+    }
+
     if (!hasInstagramCredentials(automation.instagramAccount)) {
       await prisma.dmLog.upsert({
         where: {

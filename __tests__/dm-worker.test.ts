@@ -234,8 +234,10 @@ beforeEach(() => {
   // latter should resolve by default, or every comment would look like a
   // duplicate of an already-answered one.
   mockPrisma.dmLog.findFirst.mockImplementation(
-    async (args: { where?: { status?: string } } = {}) =>
-      args.where?.status === "SENT" ? null : { commenterName: "commenter_user" }
+    async (args: { where?: { status?: string; OR?: unknown } } = {}) =>
+      args.where?.status === "SENT" || args.where?.OR
+        ? null
+        : { commenterName: "commenter_user" }
   );
   mockPrisma.dmLog.upsert.mockResolvedValue({});
   mockPrisma.dmLog.update.mockReset().mockResolvedValue({});
@@ -1070,6 +1072,49 @@ describe("DM Worker — DM keyword trigger", () => {
           matchedKeyword: "LINK",
           status: "SENT",
         }),
+      })
+    );
+  });
+
+  it("should send only one reply when a DM matches two campaigns", async () => {
+    // e.g. "sí, quiero la rutina" hitting both a sales campaign and a free one.
+    const first = { ...dmTriggerAutomation, id: "auto_sales", name: "Ventas" };
+    const second = { ...dmTriggerAutomation, id: "auto_free", name: "Rutina" };
+    mockPrisma.automation.findMany.mockResolvedValue([first, second]);
+
+    // Stateful log: what the first campaign writes, the second one reads.
+    const sent: { automationId: string; commentId: string; name: string }[] = [];
+    mockPrisma.dmLog.upsert.mockImplementation(
+      async (args: {
+        where: { automationId_commentId: { automationId: string; commentId: string } };
+        create: { status: string };
+      }) => {
+        if (args.create.status === "SENT") {
+          const { automationId, commentId } = args.where.automationId_commentId;
+          sent.push({ automationId, commentId, name: automationId === "auto_sales" ? "Ventas" : "Rutina" });
+        }
+        return {};
+      }
+    );
+    mockPrisma.dmLog.findFirst.mockImplementation(
+      async (args: { where?: { status?: string; OR?: unknown; commentId?: string; automationId?: { not?: string } } } = {}) => {
+        if (args.where?.status !== "SENT" && !args.where?.OR) return { commenterName: "commenter_user" };
+        const hit = sent.find(
+          (s) => s.commentId === args.where?.commentId && s.automationId !== args.where?.automationId?.not
+        );
+        return hit ? { automation: { name: hit.name } } : null;
+      }
+    );
+
+    const processor = getProcessor();
+    await processor(createMockMessageJob());
+
+    expect(mockSendDirectMessage).toHaveBeenCalledTimes(1);
+    expect(mockReserveWorkspaceDMSend).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.dmLog.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { automationId_commentId: { automationId: "auto_free", commentId: "dm:mid_abc" } },
+        create: expect.objectContaining({ status: "SKIPPED_DEDUP" }),
       })
     );
   });

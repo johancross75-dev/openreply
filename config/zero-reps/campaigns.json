@@ -1,0 +1,86 @@
+{
+  "$comment": "Configuración permanente de campañas de Zero Reps. Las guías gratuitas envían SOLO su formulario de Tally (nunca el PDF directo). El Método Zero es de pago y envía SOLO la landing de venta. Los valores PENDIENTE bloquean 'apply' hasta reemplazarlos por los enlaces reales. Orden = prioridad: si un mensaje coincide con dos campañas, gana la primera de la lista y la otra no envía nada.",
+  "campaigns": [
+    {
+      "name": "Guía gratis — RUTINA",
+      "type": "free",
+      "keywords": ["RUTINA", "RUTINAS"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Quiero mi rutina",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Guía gratis — GRASA",
+      "type": "free",
+      "keywords": ["GRASA"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Quiero la guía",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Guía gratis — FLEXIÓN",
+      "type": "free",
+      "keywords": ["FLEXIÓN", "FLEXIONES"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Quiero la guía",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Guía gratis — DOMINADA",
+      "type": "free",
+      "keywords": ["DOMINADA", "DOMINADAS"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Quiero la guía",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Guía gratis — HOMBRO",
+      "type": "free",
+      "keywords": ["HOMBRO", "HOMBROS"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Quiero la guía",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Guía gratis — MUNDO",
+      "type": "free",
+      "keywords": ["MUNDO"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Quiero la guía",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Método Zero — INFO / MARAVILLA",
+      "type": "commercial",
+      "keywords": ["INFO", "INFORMACIÓN", "MARAVILLA", "MARAVILLAS"],
+      "scope": "any-post",
+      "dmTrigger": true,
+      "message": "PENDIENTE",
+      "buttonLabel": "Ver El Método Zero",
+      "url": "PENDIENTE"
+    },
+    {
+      "name": "Método Zero — SÍ (solo posts del Método Zero)",
+      "type": "commercial",
+      "keywords": ["SÍ"],
+      "scope": "posts",
+      "postIds": ["PENDIENTE"],
+      "dmTrigger": false,
+      "message": "PENDIENTE",
+      "buttonLabel": "Ver El Método Zero",
+      "url": "PENDIENTE"
+    }
+  ]
+}
